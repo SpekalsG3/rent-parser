@@ -1,0 +1,40 @@
+{
+  "name": "avito-rent-parser",
+  "version": "1.0.0",
+  "description": "Avito rent offers parser",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "NODE_PATH=./dist/src node ./dist/src/index.js",
+    "dev": "nodemon",
+    "lint:js": "LIST=`git diff-index --name-only --diff-filter=d HEAD | grep '.js$'`; if [ \"$LIST\" ]; then ./node_modules/.bin/eslint $LIST --max-warnings=10; fi "
+  },
+  "keywords": [
+    "spekalsg3",
+    "parser",
+    "rent"
+  ],
+  "author": "spekalsg3",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^16.11.1",
+    "@typescript-eslint/eslint-plugin": "^4.33.0",
+    "@typescript-eslint/parser": "^4.33.0",
+    "eslint": "^7.32.0",
+    "eslint-config-standard": "^16.0.3",
+    "eslint-config-standard-with-typescript": "^21.0.1",
+    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "husky": "^7.0.2",
+    "nodemon": "^2.0.13",
+    "ts-node": "^10.3.0",
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "axios": "^0.23.0",
+    "discord.js": "12.5.3",
+    "dotenv": "^10.0.0",
+    "node-html-parser": "^5.1.0"
+  }
+}
