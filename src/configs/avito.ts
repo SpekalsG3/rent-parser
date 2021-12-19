@@ -23,6 +23,12 @@ export enum EAvitoMetroIds {
   all = '156-161-163-164-165-177-178-180-184-185-197-201-202-205-212-1015'
 }
 
+export enum EAvitoSortIds {
+  cheaper = '1',
+  moreExpensive = '2',
+  latest = '104',
+}
+
 export const AvitoFilterMarkers = { // todo reverseEngineer onClick on button `search-filters/submit-button`
   rooms: {
     studio: 'params[550](5702-root)',

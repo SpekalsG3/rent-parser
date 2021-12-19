@@ -2,5 +2,5 @@
 .env
 dist
 /node_modules/
-/bin/
+/example-data/
 parser-settings.json

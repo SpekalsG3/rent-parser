@@ -1,6 +1,6 @@
 import { parse } from 'node-html-parser'
 
-import { IAvitoConfig, IAvitoFilterTypes } from 'configs/avito'
+import { EAvitoSortIds, IAvitoConfig, IAvitoFilterTypes } from 'configs/avito'
 import { Logger } from 'libs/logger'
 import { ICustomHTMLElement, IOffer } from 'types/project'
 import { parseRuDate } from 'utils/parse-ru-date'
@@ -11,7 +11,7 @@ import { Request } from 'libs/request'
 import { IPlatformParser } from '../types'
 
 import { RequestErrors } from './errors'
-import { ISearchRequest } from './types'
+import { IParseResult, ISearchRequest } from './types'
 import { IInitialData, TAvitoBxSinglePageGroup } from './types/initial-data'
 import { IBxSinglePage } from './types/initial-data/groups/bx-single-page'
 import { ICatalogItem } from './types/initial-data/groups/catalog-item'
@@ -46,16 +46,21 @@ export class AvitoAdapter implements IPlatformParser {
   }
 
   private async fetchHtmlDocument (request: ISearchRequest): Promise<ICustomHTMLElement> {
-    const { city, service, filter, metro } = request
+    const {
+      city,
+      service,
+      filter,
+      metro,
+      sort = EAvitoSortIds.latest,
+      page = 2,
+    } = request
     const path = `/${city}/${service.name}/${service.query.join('/')}`
-
-    // @ts-expect-error // reduce cannot return string
-    const query = `metro=${metro.reduce((id1, id2) => `${id1}-${id2}`)}`
 
     const requestKey = AvitoAdapter.encodeRequest(null) // fixme parameters
     const filterKey = AvitoAdapter.encodeFilter(filter)
 
-    const url = `${path}-${requestKey}?${query}&f=${filterKey}`
+    // @ts-expect-error // reduce cannot return string
+    const url = `${path}-${requestKey}?metro=${metro.reduce((id1, id2) => `${id1}-${id2}`)}&f=${filterKey}&s=${sort}&p=${page}`
 
     let html: string
     try {
@@ -114,7 +119,7 @@ export class AvitoAdapter implements IPlatformParser {
     }
   }
 
-  protected parseInitialData (initialData: IInitialData): IOffer[] {
+  protected parseInitialData (initialData: IInitialData): IParseResult {
     const bxSinglePageKey = Object.keys(initialData).find(key => key.includes(TAvitoBxSinglePageGroup))
 
     const bxSinglePage: IBxSinglePage = initialData[bxSinglePageKey]
@@ -161,7 +166,11 @@ export class AvitoAdapter implements IPlatformParser {
       }
     })
 
-    return offers
+    return {
+      itemsPerPage: bxSinglePage.data.itemsOnPage,
+      itemsTotal: bxSinglePage.data.totalCount, // or count, or totalElements
+      offers: offers,
+    }
   }
 
   protected getHtmlOffers (document: ICustomHTMLElement): ICustomHTMLElement[] {
@@ -211,8 +220,29 @@ export class AvitoAdapter implements IPlatformParser {
   }
 
   async getActiveOffers (request: ISearchRequest): Promise<IOffer[]> {
-    const document = await this.fetchHtmlDocument(request)
-    const initialData = this.getInitialData(document)
-    return this.parseInitialData(initialData)
+    const allOffers: IOffer[] = []
+
+    let newRequestPage = request.page
+
+    while (true) {
+      const document = await this.fetchHtmlDocument({
+        ...request,
+        page: newRequestPage,
+      })
+      const initialData = this.getInitialData(document)
+
+      const { offers, itemsTotal, itemsPerPage } = this.parseInitialData(initialData)
+
+      allOffers.concat(offers)
+
+      const totalPages = Math.ceil(itemsTotal / itemsPerPage)
+      if (newRequestPage >= totalPages) {
+        break
+      }
+
+      newRequestPage += 1
+    }
+
+    return allOffers
   }
 }
