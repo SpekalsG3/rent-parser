@@ -2,7 +2,7 @@
   "name": "avito-rent-parser",
   "version": "1.0.0",
   "description": "Avito rent offers parser",
-  "main": "src/index.js",
+  "main": "src/index.ts",
   "scripts": {
     "build": "tsc",
     "start": "NODE_PATH=./dist/src node ./dist/src/index.js",
@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "axios": "^0.23.0",
+    "cron": "^1.8.2",
     "discord.js": "12.5.3",
     "dotenv": "^10.0.0",
     "node-html-parser": "^5.1.0"

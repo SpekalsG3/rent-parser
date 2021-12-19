@@ -17,7 +17,6 @@ import { IBxSinglePage } from './types/initial-data/groups/bx-single-page'
 import { ICatalogItem } from './types/initial-data/groups/catalog-item'
 
 export class AvitoAdapter implements IPlatformParser {
-  // private readonly api: Request
   private readonly scrapper: Scrapper
   private readonly config: IAvitoConfig
   private readonly logger = new Logger('AVITO-PARSER')
@@ -30,7 +29,6 @@ export class AvitoAdapter implements IPlatformParser {
     } else {
       this.api = new Request({
         baseURL: config.baseUrl,
-        headers: config.headers,
       })
     }
   }
@@ -44,7 +42,7 @@ export class AvitoAdapter implements IPlatformParser {
   }
 
   private static encodeFilter (parameters: IAvitoFilterTypes): string {
-    return 'ASgBAQECAkSSA8gQ8AeQUgJA7gc0iFKGUoJSzAgkkFmOWQFFxpoMFXsiZnJvbSI6MCwidG8iOjI1MDAwfQ'
+    return 'ASgBAQECAkSSA8gQ8AeQUgJA7gc0iFKGUoJSzAgkkFmOWQFFxpoMGXsiZnJvbSI6MjAwMDAsInRvIjozMDAwMH0'
   }
 
   private async fetchHtmlDocument (request: ISearchRequest): Promise<ICustomHTMLElement> {

@@ -1,7 +1,5 @@
 import assert from 'assert'
 
-import { IMap } from '../types/general'
-
 export enum EAvitoCities {
   spb = 'sankt-peterburg',
 }
@@ -22,11 +20,7 @@ export interface IAvitoService {
 
 export enum EAvitoMetroIds {
   parnas = 213,
-}
-
-export interface IAvitoConfig {
-  baseUrl: string
-  headers: IMap<string>
+  all = '156-161-163-164-165-177-178-180-184-185-197-201-202-205-212-1015'
 }
 
 export const AvitoFilterMarkers = { // todo reverseEngineer onClick on button `search-filters/submit-button`
@@ -78,17 +72,8 @@ export const AvitoServices = {
 
 assert(process.env.AVITO_BASE_URL, 'process.env.AVITO_BASE_URL is required')
 
-export const avitoConfig: IAvitoConfig = {
+export const avitoConfig = {
   baseUrl: process.env.AVITO_BASE_URL,
-  headers: {
-    'sec-fetch-user': '?1',
-    'sec-fetch-site': 'none',
-    'sec-fetch-mode': 'navigate',
-    'sec-fetch-dest': 'document',
-    'upgrade-insecure-requests': '1',
-    referer: 'https://www.youtube.com/',
-    'accept-language': 'en',
-    accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-    'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:88.0) Gecko/20100101 Firefox/88.0',
-  },
 } as const
+
+export type IAvitoConfig = typeof avitoConfig

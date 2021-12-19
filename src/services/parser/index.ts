@@ -69,8 +69,10 @@ export class RentParser {
 
     for (const platform of this.platformParsers) {
       try {
+        this.logger.info(`Getting offer from ${platform.getName()}...`)
+
         const platformOffers = await platform.getActiveOffers({ // make dynamic
-          metro: [EAvitoMetroIds.parnas],
+          metro: [EAvitoMetroIds.all, EAvitoMetroIds.parnas],
           city: EAvitoCities.spb,
           service: AvitoServices.apartment,
           filter: {
