@@ -27,7 +27,6 @@ const jobs = [
 ]
 
 export const startJobs = (): void => {
-  void updateAndNotify()
   for (const job of jobs) {
     job.start()
   }
