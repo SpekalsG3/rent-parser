@@ -1,6 +1,6 @@
 module.exports = {
   apps: [{
-    name: 'avito rent parser',
+    name: 'rent-parser-core',
     cwd: __dirname,
     script: 'npm run start',
     watch: false,
