@@ -52,7 +52,7 @@ export class AvitoAdapter implements IPlatformParser {
       filter,
       metro,
       sort = EAvitoSortIds.latest,
-      page = 2,
+      page = 1,
     } = request
     const path = `/${city}/${service.name}/${service.query.join('/')}`
 
@@ -222,7 +222,7 @@ export class AvitoAdapter implements IPlatformParser {
   async getActiveOffers (request: ISearchRequest): Promise<IOffer[]> {
     const allOffers: IOffer[] = []
 
-    let newRequestPage = request.page
+    let newRequestPage = request.page || 1
 
     while (true) {
       const document = await this.fetchHtmlDocument({
