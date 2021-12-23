@@ -12,7 +12,7 @@ export interface ISearchRequest {
 }
 
 export interface IParseResult {
+  itemsOnPage: number
   itemsTotal: number
-  itemsPerPage: number
   offers: IOffer[]
 }

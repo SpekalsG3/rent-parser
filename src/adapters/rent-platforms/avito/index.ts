@@ -65,10 +65,8 @@ export class AvitoAdapter implements IPlatformParser {
     let html: string
     try {
       if (this.scrapper) {
-        this.logger.info('Fetching using scrapper...')
         html = await this.scrapper.get<string>(`${this.config.baseUrl}${url}`)
       } else {
-        this.logger.info('Fetching using axios...')
         const { data } = await this.api.get<string>(url)
         html = data
       }
@@ -167,7 +165,7 @@ export class AvitoAdapter implements IPlatformParser {
     })
 
     return {
-      itemsPerPage: bxSinglePage.data.itemsOnPage,
+      itemsOnPage: bxSinglePage.data.itemsOnPage,
       itemsTotal: bxSinglePage.data.totalCount, // or count, or totalElements
       offers: offers,
     }
@@ -220,23 +218,30 @@ export class AvitoAdapter implements IPlatformParser {
   }
 
   async getActiveOffers (request: ISearchRequest): Promise<IOffer[]> {
-    const allOffers: IOffer[] = []
+    let allOffers: IOffer[] = []
 
-    let newRequestPage = request.page || 1
+    let newRequestPage = request.page || 7
+    let totalPages: number = null
+    let itemsPerPage: number = null
 
     while (true) {
+      this.logger.info(`Fetching with ${this.scrapper ? 'scrapper' : 'axios'} page ${newRequestPage}/${totalPages || '-'}...`)
+
       const document = await this.fetchHtmlDocument({
         ...request,
         page: newRequestPage,
       })
       const initialData = this.getInitialData(document)
 
-      const { offers, itemsTotal, itemsPerPage } = this.parseInitialData(initialData)
+      const { offers, itemsOnPage, itemsTotal } = this.parseInitialData(initialData)
 
-      allOffers.concat(offers)
+      allOffers = allOffers.concat(offers)
 
-      const totalPages = Math.ceil(itemsTotal / itemsPerPage)
-      if (newRequestPage >= totalPages) {
+      if (!itemsPerPage && itemsTotal > itemsOnPage) {
+        itemsPerPage = itemsOnPage
+      }
+      totalPages = Math.ceil(itemsTotal / itemsPerPage)
+      if (itemsOnPage === 0 || itemsOnPage < itemsPerPage || newRequestPage >= totalPages) {
         break
       }
 
