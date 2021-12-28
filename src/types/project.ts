@@ -5,6 +5,8 @@ export interface ICustomHTMLElement extends HTMLElement {
 }
 
 export interface IOffer {
+  id: string
+  platform: string
   title: string
   url: string
   price: string // todo parse currency and amount separately

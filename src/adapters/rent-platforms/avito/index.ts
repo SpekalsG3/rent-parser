@@ -134,6 +134,8 @@ export class AvitoAdapter implements IPlatformParser {
         const [geoReference] = DevelopmentNameStep[0].payload.geoForItems.geoReferences
 
         offers.push({
+          id: String(item.id),
+          platform: this.getName(),
           title: item.title,
           url: `${this.config.baseUrl}${item.urlPath}`,
           description: item.description,
@@ -197,6 +199,8 @@ export class AvitoAdapter implements IPlatformParser {
         const publishedAt = data.childNodes[publishAtNodeIndex].childNodes[0].childNodes[0].childNodes[0].childNodes[0].innerText
 
         return {
+          id: null, // todo
+          platform: this.getName(),
           title: title,
           price: price,
           location: location,

@@ -140,7 +140,10 @@ export class Discord implements INotifier {
           try {
             const channel = await this.client.channels.fetch(channelId)
             if (channel.isText()) {
-              await channel.send(embedded)
+              await channel.send({
+                content: `${offer.id} [${offer.platform}] - ${offer.title}`,
+                embed: embedded,
+              })
             } else {
               throw new Error('Channel is not text')
             }
