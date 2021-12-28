@@ -23,7 +23,7 @@ function callBackRunner (id: string, f: Function): (() => void) {
 }
 
 const jobs: Array<[string, Function]> = [
-  ['0 */30 * * * *', updateAndNotify], // every 30 minutes
+  ['0 */10 * * * *', updateAndNotify], // every 10 minutes
 ]
 
 export const startJobs = (params?: {

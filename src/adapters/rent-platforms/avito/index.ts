@@ -220,7 +220,7 @@ export class AvitoAdapter implements IPlatformParser {
   async getActiveOffers (request: ISearchRequest): Promise<IOffer[]> {
     let allOffers: IOffer[] = []
 
-    let newRequestPage = request.page || 7
+    let newRequestPage = request.page || 1
     let totalPages: number = null
     let itemsPerPage: number = null
 
