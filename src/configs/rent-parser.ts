@@ -1,5 +1,6 @@
 import assert from 'assert'
 
+assert(process.env.RENT_PARSER_DISABLE_SETTINGS, 'process.env.RENT_PARSER_DISABLE_SETTINGS is required')
 assert(process.env.RENT_PARSER_SETTINGS_PATH, 'process.env.RENT_PARSER_SETTINGS_PATH is required')
 
 export const rentParserConfig = {

@@ -1,8 +1,11 @@
 import { CronJob } from 'cron'
-
 import { updateAndNotify } from 'jobs/parser'
+import { jobsConfig } from 'configs/jobs'
+
+import { Logger } from '../libs/logger'
 
 const callbacksDictionary: Record<string, boolean> = {}
+const logger = new Logger('Jobs')
 
 function callBackRunner (id: string, f: Function): (() => void) {
   if (Object.keys(callbacksDictionary).includes(id)) {
@@ -12,6 +15,7 @@ function callBackRunner (id: string, f: Function): (() => void) {
 
   return async () => {
     if (callbacksDictionary[id]) {
+      logger.info(`Job ${id} is already running, aborting...`)
       return
     }
     callbacksDictionary[id] = true
@@ -22,20 +26,17 @@ function callBackRunner (id: string, f: Function): (() => void) {
   }
 }
 
-const jobs: Array<[string, Function]> = [
-  ['0 */10 * * * *', updateAndNotify], // every 10 minutes
-]
+export const startJobs = (): void => {
+  const jobs: Array<[string, Function]> = [
+    [jobsConfig.cronTabs.updateAndNotify, updateAndNotify], // every 30 minutes
+  ]
 
-export const startJobs = (params?: {
-  immediately?: boolean
-  singleRun?: boolean
-}): void => {
   let id = 1
   for (const [interval, func] of jobs) {
-    if (params.immediately) {
+    if (jobsConfig.toRunImmediately) {
       func()
 
-      if (params.singleRun) {
+      if (jobsConfig.isSingleRun) {
         continue
       }
     }

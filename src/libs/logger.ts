@@ -43,6 +43,10 @@ export class Logger {
     console.log(`[INFO ${this.name}: ${this.id}] ${args.join('')}`)
   }
 
+  public debug (...args: string[]): void {
+    console.log(`[DEBUG ${this.name}: ${this.id}] ${args.join('')}`)
+  }
+
   public error (...args: string[]): void {
     console.error(`[ERROR ${this.name}: ${this.id}] ${args.join('')}`)
   }

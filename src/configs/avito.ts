@@ -20,7 +20,7 @@ export interface IAvitoService {
 
 export enum EAvitoMetroIds {
   parnas = 213,
-  all = '156-161-163-164-165-177-178-180-184-185-197-201-202-205-212-1015'
+  blueBranch = '156-161-163-164-170-177-178-180-183-184-185-186-197-202-205-207-212-213'
 }
 
 export enum EAvitoSortIds {

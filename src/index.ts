@@ -1,9 +1,6 @@
 import 'dotenv/config'
 import { startJobs } from 'jobs/index'
 
-startJobs({
-  immediately: true,
-  singleRun: true,
-})
+startJobs()
 
 console.log('Jobs started')

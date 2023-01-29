@@ -148,7 +148,7 @@ export class Discord implements INotifier {
               throw new Error('Channel is not text')
             }
           } catch (e) {
-            this.logger.error(`Failed to send offers to guild ${guildId}, ${this.config.channelNames.notifications} channel id ${channelId}`)
+            this.logger.error(`Failed to send offers to guild ${guildId}, ${this.config.channelNames.notifications} channel id ${channelId} - ${e.message}`)
           }
         }
       }

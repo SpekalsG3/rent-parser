@@ -9,6 +9,7 @@ export interface ISearchRequest {
   filter: IAvitoFilterTypes
   sort?: EAvitoSortIds
   page?: number
+  maxDistanceInMeters?: number
 }
 
 export interface IParseResult {

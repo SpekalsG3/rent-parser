@@ -42,25 +42,29 @@ export class AvitoAdapter implements IPlatformParser {
   }
 
   private static encodeFilter (parameters: IAvitoFilterTypes): string {
-    return 'ASgBAQECAkSSA8gQ8AeQUgJA7gc0iFKGUoJSzAgkkFmOWQFFxpoMGXsiZnJvbSI6MjAwMDAsInRvIjozMDAwMH0'
+    // return 'ASgBAQECAkSSA8gQ8AeQUgJA7gc0iFKGUoJSzAgkkFmOWQFFxpoMGXsiZnJvbSI6MjAwMDAsInRvIjozMDAwMH0'
+
+    // no wifi 20k-30k
+    // return 'ASgBAQECAkSSA8gQ8AeQUgVA7gdEmOuZAohShlKCUswIJJBZjlnswQ00hs85hM85gs85iL0ONOKk0QHepNEB4KTRAdL7DkSG6~MChOvjAoLr4wKA6~MCAUXGmgwZeyJmcm9tIjoyMDAwMCwidG8iOjMwMDAwfQ' + '&footWalkingMetro=20'
+
+    // no wifi 22k-30k
+    return 'ASgBAQECAkSSA8gQ8AeQUgVA7gdEmOuZAohShlKCUswIJJBZjlnswQ00hs85hM85gs85iL0ONOKk0QHepNEB4KTRAdL7DkSG6~MChOvjAoLr4wKA6~MCAUXGmgwZeyJmcm9tIjoyMjAwMCwidG8iOjMwMDAwfQ'
   }
 
   private async fetchHtmlDocument (request: ISearchRequest): Promise<ICustomHTMLElement> {
-    const {
-      city,
-      service,
-      filter,
-      metro,
-      sort = EAvitoSortIds.latest,
-      page = 1,
-    } = request
-    const path = `/${city}/${service.name}/${service.query.join('/')}`
+    const path = `/${request.city}/${request.service.name}/${request.service.query.join('/')}`
 
     const requestKey = AvitoAdapter.encodeRequest(null) // fixme parameters
-    const filterKey = AvitoAdapter.encodeFilter(filter)
+    const filterKey = AvitoAdapter.encodeFilter(request.filter)
 
-    // @ts-expect-error // reduce cannot return string
-    const url = `${path}-${requestKey}?metro=${metro.reduce((id1, id2) => `${id1}-${id2}`)}&f=${filterKey}&s=${sort}&p=${page}`
+    const url = `${path}-${requestKey}?metro=${
+      // @ts-expect-error // reduce cannot return string
+      request.metro.reduce((id1, id2) => `${id1}-${id2}`)
+    }&f=${filterKey}&s=${request.sort || EAvitoSortIds.latest}&p=${request.page || 1}` + (
+        request.maxDistanceInMeters
+          ? `&footWalkingMetro=${30}`
+          : ''
+      )
 
     let html: string
     try {
@@ -117,7 +121,7 @@ export class AvitoAdapter implements IPlatformParser {
     }
   }
 
-  protected parseInitialData (initialData: IInitialData): IParseResult {
+  protected parseInitialData (request: ISearchRequest, initialData: IInitialData): IParseResult {
     const bxSinglePageKey = Object.keys(initialData).find(key => key.includes(TAvitoBxSinglePageGroup))
 
     const bxSinglePage: IBxSinglePage = initialData[bxSinglePageKey]
@@ -125,13 +129,27 @@ export class AvitoAdapter implements IPlatformParser {
     const offers: IOffer[] = []
     bxSinglePage.data.catalog.items.forEach((item: ICatalogItem): void => {
       // there's an element which is not a catalog item
-      if (!item.id) return null
+      if (!item.id) return
 
       try {
         const { PriceStep, DevelopmentNameStep, DateInfoStep } = item.iva
 
         const { priceDetailed } = PriceStep[0].payload
         const [geoReference] = DevelopmentNameStep[0].payload.geoForItems.geoReferences
+
+        if (geoReference.after) {
+          const [amountStr, unit] = geoReference.after.split(' ')
+          if (unit === 'км' || unit === 'м') {
+            let amount = Number(amountStr.replace(',', '.'))
+            if (unit === 'км') {
+              amount *= 1000
+            }
+
+            if (amount > request.maxDistanceInMeters) {
+              return
+            }
+          }
+        }
 
         offers.push({
           id: String(item.id),
@@ -198,6 +216,19 @@ export class AvitoAdapter implements IPlatformParser {
         const description = data.childNodes[locationNodeIndex + 1].childNodes[0].innerText
         const publishedAt = data.childNodes[publishAtNodeIndex].childNodes[0].childNodes[0].childNodes[0].childNodes[0].innerText
 
+        const distance = location.match(/([0-9]*(?:,[0-9]*)?) (к?м)/)
+        if (distance) {
+          let amount = Number(distance[1].replace(',', '.'))
+          if (distance[2] === 'км') {
+            amount *= 1000
+          }
+
+          // todo hardcoded
+          if (amount > 1600) {
+            return null
+          }
+        }
+
         return {
           id: null, // todo
           platform: this.getName(),
@@ -225,11 +256,10 @@ export class AvitoAdapter implements IPlatformParser {
     let allOffers: IOffer[] = []
 
     let newRequestPage = request.page || 1
-    let totalPages: number = null
-    let itemsPerPage: number = null
+    let processedItems: number = 0
 
     while (true) {
-      this.logger.info(`Fetching with ${this.scrapper ? 'scrapper' : 'axios'} page ${newRequestPage}/${totalPages || '-'}...`)
+      this.logger.info(`Fetching with ${this.scrapper ? 'scrapper' : 'axios'} page ${newRequestPage}...`)
 
       const document = await this.fetchHtmlDocument({
         ...request,
@@ -237,15 +267,13 @@ export class AvitoAdapter implements IPlatformParser {
       })
       const initialData = this.getInitialData(document)
 
-      const { offers, itemsOnPage, itemsTotal } = this.parseInitialData(initialData)
+      const { offers, itemsOnPage, itemsTotal } = this.parseInitialData(request, initialData)
 
       allOffers = allOffers.concat(offers)
+      processedItems += itemsOnPage
 
-      if (!itemsPerPage && itemsTotal > itemsOnPage) {
-        itemsPerPage = itemsOnPage
-      }
-      totalPages = Math.ceil(itemsTotal / itemsPerPage)
-      if (itemsOnPage === 0 || itemsOnPage < itemsPerPage || newRequestPage >= totalPages) {
+      this.logger.debug(`Items count: itemsOnPage ${itemsOnPage} (processed ${processedItems}), itemsTotal ${itemsTotal}`)
+      if (itemsOnPage === 0 || processedItems >= itemsOnPage) {
         break
       }
 
