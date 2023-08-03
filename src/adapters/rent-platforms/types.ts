@@ -11,6 +11,5 @@ export interface IConfig {
 
 export interface IPlatformParser {
   getName: () => string
-  // todo get only new offers
   getActiveOffers: (searchRequest: ISearchRequest) => Promise<IOffer[]>
 }

@@ -177,7 +177,7 @@ export interface ICatalogItem {
         geoForItems: {
           addressLocality: string
           formattedAddress: string
-          geoReferences: Array<{
+          geoReferences: Array<undefined | {
             content: string
             colors: Array<`#${number}`> // hex
             after: string

@@ -48,7 +48,10 @@ export class AvitoAdapter implements IPlatformParser {
     // return 'ASgBAQECAkSSA8gQ8AeQUgVA7gdEmOuZAohShlKCUswIJJBZjlnswQ00hs85hM85gs85iL0ONOKk0QHepNEB4KTRAdL7DkSG6~MChOvjAoLr4wKA6~MCAUXGmgwZeyJmcm9tIjoyMDAwMCwidG8iOjMwMDAwfQ' + '&footWalkingMetro=20'
 
     // no wifi 22k-30k
-    return 'ASgBAQECAkSSA8gQ8AeQUgVA7gdEmOuZAohShlKCUswIJJBZjlnswQ00hs85hM85gs85iL0ONOKk0QHepNEB4KTRAdL7DkSG6~MChOvjAoLr4wKA6~MCAUXGmgwZeyJmcm9tIjoyMjAwMCwidG8iOjMwMDAwfQ'
+    // return 'ASgBAQECAkSSA8gQ8AeQUgVA7gdEmOuZAohShlKCUswIJJBZjlnswQ00hs85hM85gs85iL0ONOKk0QHepNEB4KTRAdL7DkSG6~MChOvjAoLr4wKA6~MCAUXGmgwZeyJmcm9tIjoyMjAwMCwidG8iOjMwMDAwfQ'
+
+    // no wifi 22k-32k
+    return 'ASgBAQECAkSSA8gQ8AeQUgVA7gdEmOuZAohShlKCUswIJJBZjlnswQ00hs85hM85gs85iL0ONOKk0QHepNEB4KTRAdL7DkSG6~MChOvjAoLr4wKA6~MCAUXGmgwZeyJmcm9tIjoyMjAwMCwidG8iOjMyMDAwfQ'
   }
 
   private async fetchHtmlDocument (request: ISearchRequest): Promise<ICustomHTMLElement> {
@@ -62,7 +65,7 @@ export class AvitoAdapter implements IPlatformParser {
       request.metro.reduce((id1, id2) => `${id1}-${id2}`)
     }&f=${filterKey}&s=${request.sort || EAvitoSortIds.latest}&p=${request.page || 1}` + (
         request.maxDistanceInMeters
-          ? `&footWalkingMetro=${30}`
+          ? `&footWalkingMetro=${20}`
           : ''
       )
 
@@ -137,7 +140,7 @@ export class AvitoAdapter implements IPlatformParser {
         const { priceDetailed } = PriceStep[0].payload
         const [geoReference] = DevelopmentNameStep[0].payload.geoForItems.geoReferences
 
-        if (geoReference.after) {
+        if (geoReference?.after && request.maxDistanceInMeters) {
           const [amountStr, unit] = geoReference.after.split(' ')
           if (unit === 'км' || unit === 'м') {
             let amount = Number(amountStr.replace(',', '.'))
@@ -179,6 +182,7 @@ export class AvitoAdapter implements IPlatformParser {
         })
       } catch (e) {
         this.logger.error(`Failed to parse offer with id ${item.id} - ${e.message}`)
+        console.trace(e)
 
         throw e
       }
@@ -196,7 +200,7 @@ export class AvitoAdapter implements IPlatformParser {
     return document.querySelectorAll('[data-marker="catalog-serp"] [data-marker="item"]')
   }
 
-  protected parseHtmlOffers (offers: ICustomHTMLElement[]): IOffer[] {
+  protected parseHtmlOffers (request: ISearchRequest, offers: ICustomHTMLElement[]): IOffer[] {
     return offers.map((html): IOffer => {
       const data = html.childNodes[1].childNodes[1]
       try {
@@ -224,7 +228,7 @@ export class AvitoAdapter implements IPlatformParser {
           }
 
           // todo hardcoded
-          if (amount > 1600) {
+          if (amount > request.maxDistanceInMeters) {
             return null
           }
         }
@@ -258,26 +262,42 @@ export class AvitoAdapter implements IPlatformParser {
     let newRequestPage = request.page || 1
     let processedItems: number = 0
 
+    const maxRetries = 3
+    let retries = 0
+
     while (true) {
-      this.logger.info(`Fetching with ${this.scrapper ? 'scrapper' : 'axios'} page ${newRequestPage}...`)
+      try {
+        this.logger.info(`Fetching with ${this.scrapper ? 'scrapper' : 'axios'} page ${newRequestPage}...`)
 
-      const document = await this.fetchHtmlDocument({
-        ...request,
-        page: newRequestPage,
-      })
-      const initialData = this.getInitialData(document)
+        const document = await this.fetchHtmlDocument({
+          ...request,
+          page: newRequestPage,
+        })
+        const initialData = this.getInitialData(document)
 
-      const { offers, itemsOnPage, itemsTotal } = this.parseInitialData(request, initialData)
+        const {
+          offers,
+          itemsOnPage,
+          itemsTotal,
+        } = this.parseInitialData(request, initialData)
 
-      allOffers = allOffers.concat(offers)
-      processedItems += itemsOnPage
+        allOffers = allOffers.concat(offers)
+        processedItems += itemsOnPage
 
-      this.logger.debug(`Items count: itemsOnPage ${itemsOnPage} (processed ${processedItems}), itemsTotal ${itemsTotal}`)
-      if (itemsOnPage === 0 || processedItems >= itemsOnPage) {
-        break
+        this.logger.debug(`Items count: itemsOnPage ${itemsOnPage} (processed ${processedItems}), itemsTotal ${itemsTotal}`)
+        if (itemsOnPage === 0 || processedItems >= itemsTotal) {
+          break
+        }
+
+        newRequestPage += 1
+      } catch (e) {
+        if (retries >= maxRetries) {
+          throw e
+        }
+
+        this.logger.error(`Request failed, trying again (${retries}/${maxRetries}), reason - ${e.message}`)
+        retries++
       }
-
-      newRequestPage += 1
     }
 
     return allOffers
